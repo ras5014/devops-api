@@ -1,13 +1,20 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import env from "../../config/env.ts";
 
+/*
+super(message) calls the parent class constructor and passes message to it.
+
+Most common case in TypeScript/JavaScript:
+
+If your class extends Error, then super(message) runs Error’s constructor.
+That sets up built-in error behavior, including the .message property. 
+*/
+
 export class AppError extends Error {
-  // HTTP status code to send back to the client.
   status: number;
 
   constructor(message: string, status: number) {
     super(message);
-    // Preserve the response status alongside the error message.
     this.status = status;
     // Make stack traces clearly identify this custom error type.
     this.name = this.constructor.name;
@@ -16,4 +23,47 @@ export class AppError extends Error {
   }
 }
 
-export const errorHandler = 
+export const errorHandler = (
+  err: AppError,
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (env.APP_STAGE === "dev") {
+    console.error(err.stack);
+  }
+
+  // default error
+  let status = err.status || 500;
+  let message = err.message || "Internal Server Error";
+
+  // Handle specific error types (e.g., validation error, authentication error, etc.)
+  if (err.name === "ValidationError") {
+    status = 400;
+    message = "Validation Error";
+  }
+
+  if (err.name === "UnauthorizedError") {
+    status = 401;
+    message = "Unauthorized";
+  }
+
+  res.status(status).json({
+    error: message,
+    ...(env.APP_STAGE === "dev" && {
+      stack: err.stack,
+      details: err.message,
+    }),
+  });
+};
+
+export const notFoundHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  // This is how you create a new error inside app
+  // Follow this pattern inside thje entire app to create errors and pass them to the error handler middleware
+  const error = new AppError(`Not Found - ${req.originalUrl}`, 404);
+  next(error);
+};
