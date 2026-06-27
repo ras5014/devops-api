@@ -1,10 +1,11 @@
 import app from "./app.ts";
 const PORT = process.env.PORT || 3000;
+import logger from "./config/logger.ts";
 
 app
   .listen(PORT, () => {
-    console.log("Server is running on http://localhost:" + PORT);
+    logger.info("Server is running on http://localhost:" + PORT);
   })
   .on("error", (err) => {
-    console.error("Failed to start server:", err);
+    logger.error("Failed to start server:", err);
   });

@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
-import env from "../../config/env.ts";
+import env from "../config/env.ts";
+import logger from "../config/logger.ts";
 
 /*
 super(message) calls the parent class constructor and passes message to it.
@@ -30,7 +31,7 @@ export const errorHandler = (
   next: NextFunction,
 ) => {
   if (env.APP_STAGE === "dev") {
-    console.error(err.stack);
+    logger.error(err.stack);
   }
 
   // default error
